@@ -1,0 +1,10 @@
+{
+  "name": "SNEAKer",
+  "description": "A simple mod that makes your sneaking speed scaled by your Sneak skill level.",
+  "version_number": "1.1.8",
+  "website_url": "https://www.nexusmods.com/valheim/mods/2093?tab=bugs",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2350",
+    "ValheimModding-Jotunn-2.30.0"
+  ]
+}
