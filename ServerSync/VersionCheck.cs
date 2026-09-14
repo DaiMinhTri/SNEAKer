@@ -39,21 +39,6 @@ internal class VersionCheck
 		}
 	}
 
-	[HarmonyPatch(typeof(ZRpc), "HandlePackage")]
-	private static class SnatchCurrentlyHandlingRPC
-	{
-		[HarmonyPrefix]
-		private static void Prefix(ZRpc __instance)
-		{
-			SnatchCurrentlyHandlingRPC2.currentRpc = __instance;
-		}
-	}
-
-	private static class SnatchCurrentlyHandlingRPC2
-	{
-		public static ZRpc? currentRpc;
-	}
-
 	private void RPC_ReceiveClientVersion(ZRpc rpc, string currentVersion, string minimumVersion)
 	{
 		ReceivedCurrentVersion = currentVersion;
@@ -61,23 +46,6 @@ internal class VersionCheck
 		DisplayName = configSync.DisplayName;
 		CurrentVersion = configSync.CurrentVersion;
 		MinimumRequiredVersion = configSync.MinimumRequiredVersion;
-	}
-
-	[HarmonyPatch(typeof(ZNet), "Rpc_All")]
-	private static class VersionCheckPatch
-	{
-		[HarmonyPostfix]
-		private static void Postfix(ZNet __instance, string func, object[] parameters)
-		{
-			if (__instance.IsServer() || func != "ClientConnected")
-			{
-				return;
-			}
-			foreach (VersionCheck versionCheck in versionChecks)
-			{
-				ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, versionCheck.configSync.Name + " Version", versionCheck.configSync.CurrentVersion, versionCheck.configSync.MinimumRequiredVersion);
-			}
-		}
 	}
 
 	[HarmonyPatch(typeof(ZNet), "Shutdown")]
