@@ -1,52 +1,40 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
 using SNEAKer.Utils;
 using ServerSync;
+using UnityEngine;
 using static Skills;
 
 namespace SNEAKer;
 
-[BepInPlugin("blacks7ar.SNEAKer", "SNEAKer", "1.1.8")]
+[BepInPlugin("blacks7ar.SNEAKer", "SNEAKer", "1.2.0")]
 public class Plugin : BaseUnityPlugin
 {
+	private const SkillType SneakSkill = (SkillType)101;
+
 	[HarmonyPatch(typeof(Character), "UpdateWalking")]
-	public class UpdateWalingPatch
+	public static class SneakSpeedPatch
 	{
-		private static readonly FieldInfo field_Character_m_crouchSpeed = AccessTools.Field(typeof(Character), "m_crouchSpeed");
-
-		private static readonly MethodInfo method_GetMoveSpeed = AccessTools.Method(typeof(UpdateWalingPatch), "GetMoveSpeed", (Type[])null, (Type[])null);
-
-		[HarmonyTranspiler]
-		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		[HarmonyPrefix]
+		public static void Prefix(Character __instance, out float __state)
 		{
-			List<CodeInstruction> source = Enumerable.ToList(instructions);
-			foreach (CodeInstruction item in Enumerable.Where(source, (CodeInstruction t) => CodeInstructionExtensions.LoadsField(t, field_Character_m_crouchSpeed, false)))
+			__state = __instance.m_crouchSpeed;
+			if (__instance.IsPlayer() && __instance.IsCrouching()
+				&& !__instance.IsEncumbered()
+				&& __instance.m_name.Contains("Human"))
 			{
-				item.opcode = OpCodes.Call;
-				item.operand = method_GetMoveSpeed;
+				float skillFactor = __instance.GetSkillFactor(SneakSkill);
+				__instance.m_crouchSpeed *= Mathf.Lerp(1f, _sneakSpeedAtMaxLevel.Value, skillFactor);
 			}
-			return Enumerable.AsEnumerable(source);
 		}
 
-		public static float GetMoveSpeed(Character __instance)
+		[HarmonyFinalizer]
+		public static Exception Finalizer(Character __instance, float __state, Exception __exception)
 		{
-			if (__instance.IsEncumbered() || !__instance.m_name.Contains("Human"))
-			{
-				return __instance.m_crouchSpeed;
-			}
-			if (_enableMod.Value != Toggle.On)
-			{
-				return __instance.m_crouchSpeed;
-			}
-			float crouchSpeed = __instance.m_crouchSpeed;
-			float num = _sneakSpeedAtMaxLevel.Value * __instance.GetSkillFactor((SkillType)101);
-			return crouchSpeed + num;
+			__instance.m_crouchSpeed = __state;
+			return __exception;
 		}
 	}
 
@@ -55,7 +43,7 @@ public class Plugin : BaseUnityPlugin
 	{
 		private static void Prefix(ref SkillType skillType, ref float factor)
 		{
-			if (_enableMod.Value == Toggle.On && _enableExpMultiplier.Value == Toggle.On && (int)skillType == 101)
+			if (_enableExpMultiplier.Value == Toggle.On && skillType == SneakSkill)
 			{
 				factor *= _sneakExpMultiplier.Value;
 			}
@@ -63,32 +51,32 @@ public class Plugin : BaseUnityPlugin
 
 		private static void Postfix(Skills __instance, SkillType skillType)
 		{
-			if (_enableMod.Value != Toggle.On || _enableExpMultiplier.Value != Toggle.On || _displayExpGained.Value != Toggle.On || (int)skillType != 101)
+			if (_enableExpMultiplier.Value != Toggle.On || _displayExpGained.Value != Toggle.On || skillType != SneakSkill)
 			{
 				return;
 			}
 			try
 			{
-				if (__instance.GetSkillLevel((SkillType)101) < 100f)
+				if (Player.m_localPlayer == null) return;
+				if (__instance.GetSkillLevel(SneakSkill) < 100f)
 				{
-					Skill skill = __instance.GetSkill((SkillType)101);
+					Skill skill = __instance.GetSkill(SneakSkill);
 					float value = skill.m_accumulator / (skill.GetNextLevelRequirement() / 100f);
 					Player.m_localPlayer.Message((MessageHud.MessageType)1, $"Level {skill.m_level.tFloat(0)} {skill.m_info.m_skill} [{skill.m_accumulator.tFloat(2)} / {skill.GetNextLevelRequirement().tFloat(2)}] ({value.tFloat(0)}%)", 0, skill.m_info.m_icon);
 				}
 			}
-			catch
+			catch (Exception ex)
 			{
+				Debug.LogWarning($"[SNEAKer] Failed to display exp: {ex.Message}");
 			}
 		}
 	}
-
-	private const string modGUID = "blacks7ar.SNEAKer";
 
 	public const string modName = "SNEAKer";
 
 	public const string modAuthor = "blacks7ar";
 
-	public const string modVersion = "1.1.8";
+	public const string modVersion = "1.2.0";
 
 	public const string modLink = "https://valheim.thunderstore.io/package/blacks7ar/SNEAKer/";
 
@@ -97,13 +85,11 @@ public class Plugin : BaseUnityPlugin
 	private static readonly ConfigSync _configSync = new ConfigSync("blacks7ar.SNEAKer")
 	{
 		DisplayName = "SNEAKer",
-		CurrentVersion = "1.1.8",
-		MinimumRequiredVersion = "1.1.8"
+		CurrentVersion = "1.2.0",
+		MinimumRequiredVersion = "1.2.0"
 	};
 
 	private static ConfigEntry<Toggle> _serverConfigLocked;
-
-	private static ConfigEntry<Toggle> _enableMod;
 
 	private static ConfigEntry<Toggle> _enableExpMultiplier;
 
@@ -126,15 +112,13 @@ public class Plugin : BaseUnityPlugin
 		Config.SaveOnConfigSet = false;
 		_serverConfigLocked = config("1- ServerSync", "Lock Configuration", Toggle.On, new ConfigDescription("If On, the configuration is locked and can be changed by server admins only."));
 		_configSync.AddLockingConfigEntry(_serverConfigLocked);
-		_enableMod = config("2- General", "Enable Mod", Toggle.On, new ConfigDescription("Enable/Disable the mod."));
 		_sneakSpeedAtMaxLevel = config("2- General", "Max Sneak Speed", 3f, new ConfigDescription("Max sneak speed at Sneak Level 100.", new AcceptableValueRange<float>(1f, 5f)));
 		_enableExpMultiplier = config("3- Skill Exp", "Enable Exp Multiplier", Toggle.On, new ConfigDescription("Enable/Disable exp multiplier."));
 		_sneakExpMultiplier = config("3- Skill Exp", "Exp Gain Multiplier", 1f, new ConfigDescription("Sneak exp multiplier.", new AcceptableValueRange<float>(0.1f, 5f)));
 		_displayExpGained = config("3- Skill Exp", "Display Exp Gained", Toggle.On, new ConfigDescription("Enable/Disable exp gained notifications."));
 		Config.SaveOnConfigSet = true;
 		Config.Save();
-		Assembly executingAssembly = Assembly.GetExecutingAssembly();
-		_harmony.PatchAll(executingAssembly);
+		_harmony.PatchAll(typeof(Plugin).Assembly);
 	}
 
 	private void OnDestroy()

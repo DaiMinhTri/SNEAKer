@@ -7,12 +7,10 @@ using System.Runtime.CompilerServices;
 using BepInEx;
 using BepInEx.Configuration;
 using HarmonyLib;
-using JetBrains.Annotations;
 using UnityEngine;
 
 namespace ServerSync;
 
-[PublicAPI]
 internal class ConfigSync
 {
 	private class SnatchCurrentlyHandlingRPC

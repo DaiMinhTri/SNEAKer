@@ -1,9 +1,7 @@
 using System;
-using JetBrains.Annotations;
 
 namespace ServerSync;
 
-[PublicAPI]
 internal class CustomSyncedValue<T> : CustomSyncedValueBase
 {
 	private bool localIsOwner = true;

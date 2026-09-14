@@ -7,6 +7,9 @@
 		<!-- BepInEx path for the target profile -->
 		<BEPINEX_PATH>$(AppData)\r2modmanPlus-local\Valheim\profiles\Test\BepInEx</BEPINEX_PATH>
 
+		<!-- Valheim managed assemblies -->
+		<VALHEIM_MANAGED>$(VALHEIM_INSTALL)\valheim_Data\Managed</VALHEIM_MANAGED>
+
 		<!-- Deploy paths -->
 		<r2ModManPath>$(AppData)\r2modmanPlus-local\Valheim\profiles</r2ModManPath>
 		<BepInExPath>$(r2ModManPath)\Test\BepInEx</BepInExPath>

@@ -5,13 +5,11 @@ using System.Linq;
 using System.Reflection;
 using BepInEx;
 using HarmonyLib;
-using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
 
 namespace ServerSync;
 
-[PublicAPI]
 [HarmonyPatch]
 internal class VersionCheck
 {

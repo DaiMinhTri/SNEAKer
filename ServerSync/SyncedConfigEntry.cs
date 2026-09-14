@@ -1,9 +1,7 @@
 using BepInEx.Configuration;
-using JetBrains.Annotations;
 
 namespace ServerSync;
 
-[PublicAPI]
 internal class SyncedConfigEntry<T> : OwnConfigEntryBase
 {
 	public readonly ConfigEntry<T> SourceConfig;

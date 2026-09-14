@@ -1,11 +1,9 @@
 using System;
 using BepInEx.Configuration;
 using HarmonyLib;
-using JetBrains.Annotations;
 
 namespace ServerSync;
 
-[PublicAPI]
 internal abstract class CustomSyncedValueBase
 {
 	public object? LocalBaseValue;
