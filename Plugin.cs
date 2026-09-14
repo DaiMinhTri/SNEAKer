@@ -73,7 +73,7 @@ public class Plugin : BaseUnityPlugin
 				{
 					Skill skill = __instance.GetSkill((SkillType)101);
 					float value = skill.m_accumulator / (skill.GetNextLevelRequirement() / 100f);
-					__instance.m_player.Message((MessageHud.MessageType)1, $"Level {skill.m_level.tFloat(0)} {skill.m_info.m_skill} [{skill.m_accumulator.tFloat(2)} / {skill.GetNextLevelRequirement().tFloat(2)}] ({value.tFloat(0)}%)", 0, skill.m_info.m_icon);
+					Player.m_localPlayer.Message((MessageHud.MessageType)1, $"Level {skill.m_level.tFloat(0)} {skill.m_info.m_skill} [{skill.m_accumulator.tFloat(2)} / {skill.GetNextLevelRequirement().tFloat(2)}] ({value.tFloat(0)}%)", 0, skill.m_info.m_icon);
 				}
 			}
 			catch

@@ -28,7 +28,7 @@ internal class ConfigSync
 	}
 
 	[HarmonyPatch(typeof(ZNet), "Awake")]
-	private static class RegisterRPCPatch
+	internal static class RegisterRPCPatch
 	{
 		[HarmonyPostfix]
 		private static void Postfix(ZNet __instance)
